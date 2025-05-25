@@ -1,34 +1,39 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import Grid from "../components/Grid";
 import Header from "../components/Header";
 
-const rows = 20;
-const cols = 24;
-const numMines = 99;
-
-const createEmptyGrid = () => {
-  return Array.from({ length: rows }, (_, row) =>
-    Array.from({ length: cols }, (_, col) => ({
-      id: `${row}-${col}`,
-      value: "",
-      isRevealed: false,
-      isFlagged: false,
-    }))
-  );
+const MODE_CONFIG = {
+  easy: { rows: 8, cols: 8, numMines: 10 },
+  normal: { rows: 12, cols: 12, numMines: 20 },
+  hard: { rows: 16, cols: 16, numMines: 40 },
+  expert: { rows: 20, cols: 24, numMines: 99 },
 };
+const MAX_HINTS = 3;
 
 const GameScreen = () => {
+  const [gameConfig, setGameConfig] = useState(MODE_CONFIG["easy"]);
+  const createEmptyGrid = () => {
+    return Array.from({ length: gameConfig.rows }, (_, row) =>
+      Array.from({ length: gameConfig.cols }, (_, col) => ({
+        id: `${row}-${col}`,
+        value: "",
+        isRevealed: false,
+        isFlagged: false,
+      }))
+    );
+  };
+
   const [grid, setGrid] = useState(createEmptyGrid());
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isFlagMode, setIsFlagMode] = useState(false);
-  const [flagsLeft, setFlagsLeft] = useState(numMines);
+  const [flagsLeft, setFlagsLeft] = useState(gameConfig.numMines);
   const [isGameOver, setIsGameOver] = useState(false);
   const [timer, setTimer] = useState(0);
   const timerRef = useRef(null);
   const [hintsUsed, setHintsUsed] = useState(0);
-  const MAX_HINTS = 3;
   const [gameStatus, setGameStatus] = useState("playing");
+  const [modeMenuVisible, setModeMenuVisible] = useState(false);
 
   useEffect(() => {
     if (isGameOver && timerRef.current) {
@@ -37,11 +42,23 @@ const GameScreen = () => {
     }
   }, [isGameOver]);
 
-  const handleRestart = () => {
-    setGrid(createEmptyGrid());
+  const handleRestart = (mode = null) => {
+    const newConfig = mode ? MODE_CONFIG[mode] : gameConfig;
+    setGameConfig(newConfig);
+
+    const newGrid = Array.from({ length: newConfig.rows }, (_, row) =>
+      Array.from({ length: newConfig.cols }, (_, col) => ({
+        id: `${row}-${col}`,
+        value: "",
+        isRevealed: false,
+        isFlagged: false,
+      }))
+    );
+
+    setGrid(newGrid);
     setIsGameStarted(false);
     setIsFlagMode(false);
-    setFlagsLeft(numMines);
+    setFlagsLeft(newConfig.numMines);
     setIsGameOver(false);
     setTimer(0);
     setHintsUsed(0);
@@ -105,12 +122,30 @@ const GameScreen = () => {
         flagsLeft={flagsLeft}
         isFlagMode={isFlagMode}
         toggleFlagMode={toggleFlagMode}
-        onRestart={handleRestart}
+        onRestart={() => {
+          setModeMenuVisible(true);
+        }}
         timer={timer}
         onHint={handleHint}
         hintDisabled={hintsUsed >= MAX_HINTS}
         faceEmoji={getFaceEmoji}
       />
+      {modeMenuVisible && (
+        <View style={styles.modeMenu}>
+          {Object.keys(MODE_CONFIG).map((mode) => (
+            <TouchableOpacity
+              key={mode}
+              onPress={() => {
+                setModeMenuVisible(false);
+                handleRestart(mode);
+              }}
+              style={styles.modeOption}
+            >
+              <Text style={styles.modeText}>{mode.toUpperCase()}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <View style={styles.gridWrapper}>
         <Grid
@@ -118,9 +153,9 @@ const GameScreen = () => {
           setGrid={setGrid}
           isGameStarted={isGameStarted}
           setIsGameStarted={setIsGameStarted}
-          rows={rows}
-          cols={cols}
-          numMines={numMines}
+          rows={gameConfig.rows}
+          cols={gameConfig.cols}
+          numMines={gameConfig.numMines}
           isFlagMode={isFlagMode}
           flagsLeft={flagsLeft}
           setFlagsLeft={setFlagsLeft}
@@ -149,5 +184,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     paddingBottom: 20,
+  },
+  modeMenu: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // semi-transparent backdrop
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  modeOption: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  modeText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
+    textAlign: "center",
   },
 });
