@@ -1,5 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  TouchableWithoutFeedback,
+} from "react-native";
 import Grid from "../components/Grid";
 import Header from "../components/Header";
 
@@ -133,20 +139,22 @@ const GameScreen = () => {
         faceEmoji={getFaceEmoji}
       />
       {modeMenuVisible && (
-        <View style={styles.modeMenu}>
-          {Object.keys(MODE_CONFIG).map((mode) => (
-            <TouchableOpacity
-              key={mode}
-              onPress={() => {
-                setModeMenuVisible(false);
-                handleRestart(mode);
-              }}
-              style={styles.modeOption}
-            >
-              <Text style={styles.modeText}>{mode.toUpperCase()}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <TouchableWithoutFeedback onPress={() => setModeMenuVisible(false)}>
+          <View style={styles.modeMenu}>
+            {Object.keys(MODE_CONFIG).map((mode) => (
+              <TouchableOpacity
+                key={mode}
+                onPress={() => {
+                  setModeMenuVisible(false);
+                  handleRestart(mode);
+                }}
+                style={styles.modeOption}
+              >
+                <Text style={styles.modeText}>{mode.toUpperCase()}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableWithoutFeedback>
       )}
 
       <View style={styles.gridWrapper}>
