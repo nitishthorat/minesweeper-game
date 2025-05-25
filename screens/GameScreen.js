@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { View, StyleSheet } from "react-native";
 import Grid from "../components/Grid";
-import { generateGameGrid } from "../utils/generateGameGrid";
+import Header from "../components/Header";
 
-const rows = 8;
-const cols = 8;
-const numMines = 10;
+const rows = 20;
+const cols = 24;
+const numMines = 99;
 
 const createEmptyGrid = () => {
   return Array.from({ length: rows }, (_, row) =>
@@ -24,6 +24,18 @@ const GameScreen = () => {
   const [isFlagMode, setIsFlagMode] = useState(false);
   const [flagsLeft, setFlagsLeft] = useState(numMines);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const timerRef = useRef(null);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const MAX_HINTS = 3;
+  const [gameStatus, setGameStatus] = useState("playing");
+
+  useEffect(() => {
+    if (isGameOver && timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [isGameOver]);
 
   const handleRestart = () => {
     setGrid(createEmptyGrid());
@@ -31,44 +43,93 @@ const GameScreen = () => {
     setIsFlagMode(false);
     setFlagsLeft(numMines);
     setIsGameOver(false);
+    setTimer(0);
+    setHintsUsed(0);
+    setGameStatus("playing");
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
   const toggleFlagMode = () => {
     setIsFlagMode((prev) => !prev);
   };
 
+  const onFirstClick = () => {
+    if (timerRef.current === null) {
+      timerRef.current = setInterval(() => {
+        setTimer((prev) => (prev < 999 ? prev + 1 : 999));
+      }, 1000);
+    }
+  };
+
+  const handleHint = () => {
+    if (isGameOver || flagsLeft <= 0 || hintsUsed >= MAX_HINTS) return;
+
+    const unflaggedMines = grid
+      .flat()
+      .filter(
+        (cell) => cell.value === "M" && !cell.isFlagged && !cell.isRevealed
+      );
+
+    if (unflaggedMines.length === 0) return;
+
+    const target =
+      unflaggedMines[Math.floor(Math.random() * unflaggedMines.length)];
+    const [row, col] = target.id.split("-").map(Number);
+
+    const newGrid = [...grid];
+    newGrid[row][col].isFlagged = true;
+
+    setGrid(newGrid);
+    setFlagsLeft((prev) => Math.max(0, prev - 1));
+    setHintsUsed((prev) => prev + 1);
+  };
+
+  const getFaceEmoji = () => {
+    switch (gameStatus) {
+      case "won":
+        return "😎";
+      case "lost":
+        return "😵";
+      default:
+        return "🙂";
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={handleRestart} style={styles.controlButton}>
-          <Text style={styles.buttonText}>🔁</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.title}>Minesweeper</Text>
-
-        <TouchableOpacity onPress={toggleFlagMode} style={styles.controlButton}>
-          <Text style={[styles.buttonText, isFlagMode && { color: "red" }]}>
-            🚩 {isFlagMode ? "On" : "Off"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.flagsLeft}>Flags left: {flagsLeft}</Text>
-
-      <Grid
-        grid={grid}
-        setGrid={setGrid}
-        isGameStarted={isGameStarted}
-        setIsGameStarted={setIsGameStarted}
-        rows={rows}
-        cols={cols}
-        numMines={numMines}
-        isFlagMode={isFlagMode}
+      <Header
         flagsLeft={flagsLeft}
-        setFlagsLeft={setFlagsLeft}
-        isGameOver={isGameOver}
-        setIsGameOver={setIsGameOver}
+        isFlagMode={isFlagMode}
+        toggleFlagMode={toggleFlagMode}
+        onRestart={handleRestart}
+        timer={timer}
+        onHint={handleHint}
+        hintDisabled={hintsUsed >= MAX_HINTS}
+        faceEmoji={getFaceEmoji}
       />
+
+      <View style={styles.gridWrapper}>
+        <Grid
+          grid={grid}
+          setGrid={setGrid}
+          isGameStarted={isGameStarted}
+          setIsGameStarted={setIsGameStarted}
+          rows={rows}
+          cols={cols}
+          numMines={numMines}
+          isFlagMode={isFlagMode}
+          flagsLeft={flagsLeft}
+          setFlagsLeft={setFlagsLeft}
+          isGameOver={isGameOver}
+          setIsGameOver={setIsGameOver}
+          onFirstClick={onFirstClick}
+          setGameStatus={setGameStatus}
+        />
+      </View>
     </View>
   );
 };
@@ -82,32 +143,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#888",
     alignItems: "center",
   },
-  topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "90%",
+  gridWrapper: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  controlButton: {
-    backgroundColor: "#444",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  flagsLeft: {
-    color: "white",
-    fontSize: 16,
-    marginBottom: 10,
+    width: "100%",
+    paddingBottom: 20,
   },
 });

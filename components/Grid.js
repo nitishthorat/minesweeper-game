@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import Cell from "./Cell";
 import { generateGameGrid } from "../utils/generateGameGrid";
 
@@ -16,6 +16,8 @@ const Grid = ({
   setFlagsLeft,
   isGameOver,
   setIsGameOver,
+  onFirstClick,
+  setGameStatus,
 }) => {
   const handlePress = (row, col) => {
     if (isGameOver) return;
@@ -42,6 +44,7 @@ const Grid = ({
     if (!isGameStarted) {
       newGrid = generateGameGrid(rows, cols, numMines, row, col);
       setIsGameStarted(true);
+      onFirstClick();
     }
 
     const clickedCell = newGrid[row][col];
@@ -52,6 +55,7 @@ const Grid = ({
       revealAllMines(newGrid);
       clickedCell.isRevealed = true;
       setIsGameOver(true);
+      setGameStatus("lost");
       setGrid([...newGrid]);
       return;
     }
@@ -64,6 +68,15 @@ const Grid = ({
     }
 
     setGrid([...newGrid]);
+
+    const allSafeRevealed = newGrid
+      .flat()
+      .every((cell) => cell.value === "M" || cell.isRevealed);
+
+    if (allSafeRevealed) {
+      setIsGameOver(true);
+      setGameStatus("won"); // ✅ User won!
+    }
   };
 
   const handleLongPress = (row, col) => {
@@ -110,22 +123,28 @@ const Grid = ({
   };
 
   return (
-    <View style={styles.grid}>
-      {grid.map((row, rowIndex) => (
-        <View key={rowIndex} style={styles.row}>
-          {row.map((cell, colIndex) => (
-            <Cell
-              key={cell.id}
-              value={cell.value}
-              isRevealed={cell.isRevealed}
-              isFlagged={cell.isFlagged}
-              onPress={() => handlePress(rowIndex, colIndex)}
-              onLongPress={() => handleLongPress(rowIndex, colIndex)}
-            />
-          ))}
-        </View>
-      ))}
-    </View>
+    <ScrollView
+      horizontal
+      contentContainerStyle={styles.grid}
+      showsHorizontalScrollIndicator
+    >
+      <View>
+        {grid.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            {row.map((cell, colIndex) => (
+              <Cell
+                key={cell.id}
+                value={cell.value}
+                isRevealed={cell.isRevealed}
+                isFlagged={cell.isFlagged}
+                onPress={() => handlePress(rowIndex, colIndex)}
+                onLongPress={() => handleLongPress(rowIndex, colIndex)}
+              />
+            ))}
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -133,7 +152,11 @@ export default Grid;
 
 const styles = StyleSheet.create({
   grid: {
-    marginTop: 10,
+    marginTop: 20,
+    marginHorizontal: 20,
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   row: {
     flexDirection: "row",
