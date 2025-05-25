@@ -1,13 +1,47 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import React from "react";
 
-const Cell = ({ value, isRevealed, isFlagged, onPress, onLongPress }) => {
+const Cell = ({
+  value,
+  isRevealed,
+  isFlagged,
+  onPress,
+  onLongPress,
+  clickedMine,
+}) => {
   let display = "";
+
+  const getNumberColor = (val) => {
+    switch (val) {
+      case 1:
+        return "blue";
+      case 2:
+        return "green";
+      case 3:
+        return "red";
+      case 4:
+        return "darkblue";
+      case 5:
+        return "brown";
+      case 6:
+        return "cyan";
+      case 7:
+        return "black";
+      case 8:
+        return "gray";
+      default:
+        return "black";
+    }
+  };
 
   if (isFlagged) {
     display = "🚩";
   } else if (isRevealed) {
-    display = value === "M" ? "💣" : value || "";
+    if (value === "M") {
+      display = clickedMine ? "💥" : "💣";
+    } else {
+      display = value;
+    }
   }
   return (
     <TouchableOpacity
@@ -15,7 +49,17 @@ const Cell = ({ value, isRevealed, isFlagged, onPress, onLongPress }) => {
       onPress={onPress}
       onLongPress={onLongPress}
     >
-      <Text style={styles.text}>{display}</Text>
+      <Text
+        style={[
+          styles.text,
+          typeof value === "number" &&
+            isRevealed && {
+              color: getNumberColor(value),
+            },
+        ]}
+      >
+        {display}
+      </Text>
     </TouchableOpacity>
   );
 };

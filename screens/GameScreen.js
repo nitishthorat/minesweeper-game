@@ -20,6 +20,7 @@ const GameScreen = () => {
         value: "",
         isRevealed: false,
         isFlagged: false,
+        clickedMine: false,
       }))
     );
   };
@@ -52,6 +53,7 @@ const GameScreen = () => {
         value: "",
         isRevealed: false,
         isFlagged: false,
+        clickedMine: false,
       }))
     );
 

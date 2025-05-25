@@ -54,6 +54,7 @@ const Grid = ({
     if (clickedCell.value === "M") {
       revealAllMines(newGrid);
       clickedCell.isRevealed = true;
+      clickedCell.clickedMine = true;
       setIsGameOver(true);
       setGameStatus("lost");
       setGrid([...newGrid]);
@@ -137,6 +138,7 @@ const Grid = ({
                 value={cell.value}
                 isRevealed={cell.isRevealed}
                 isFlagged={cell.isFlagged}
+                clickedMine={cell.clickedMine}
                 onPress={() => handlePress(rowIndex, colIndex)}
                 onLongPress={() => handleLongPress(rowIndex, colIndex)}
               />
